@@ -2,12 +2,12 @@
 import mojito
 import pprint
 
-with open("../../koreainvestment.key") as f:
+with open('../../koreainvestment.key') as f:
     lines = f.readlines()
 
 key = lines[0].strip()
 secret = lines[1].strip()
-ACC_NO="63398082-01"
+ACC_NO='63398082-01'
 
 broker = mojito.KoreaInvestment(
     api_key=key,
@@ -16,7 +16,7 @@ broker = mojito.KoreaInvestment(
 )
 
 resp = broker.check_buy_order(
-    symbol="005930",
+    symbol='005930',
     price=60000,
     order_type='00'
 )

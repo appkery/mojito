@@ -4,7 +4,7 @@
 import mojito
 import pprint
 
-with open("../../../koreainvestment.key", encoding='utf-8') as f:
+with open('../../../koreainvestment.key', encoding='utf-8') as f:
     lines = f.readlines()
 
 key = lines[0].strip()
@@ -19,7 +19,7 @@ broker = mojito.KoreaInvestment(
 )
 
 ohlcv = broker.fetch_ohlcv(
-    symbol="TSLA",
+    symbol='TSLA',
     timeframe='D',
     adj_price=True
 )

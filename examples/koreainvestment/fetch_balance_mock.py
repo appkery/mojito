@@ -2,12 +2,12 @@
 import mojito
 import pprint
 
-with open("../../mock.key") as f:
+with open('../../mock.key') as f:
     lines = f.readlines()
 
 key = lines[0].strip()
 secret = lines[1].strip()
-acc_no = "50074923-01"
+acc_no = '50074923-01'
 
 broker = mojito.KoreaInvestment(
     api_key = key,
@@ -24,4 +24,4 @@ for comp in resp['output1']:
     print(comp['hldg_qty'])
     print(comp['pchs_amt'])
     print(comp['evlu_amt'])
-    print("-" * 40)
+    print('-' * 40)

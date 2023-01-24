@@ -3,12 +3,12 @@ import mojito
 import pprint
 import time
 
-with open("../../mock.key") as f:
+with open('../../mock.key') as f:
     lines = f.readlines()
 
 key = lines[0].strip()
 secret = lines[1].strip()
-acc_no = "50074923-01"
+acc_no = '50074923-01'
 
 broker = mojito.KoreaInvestment(
     api_key=key,
