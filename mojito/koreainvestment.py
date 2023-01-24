@@ -1,16 +1,17 @@
 """
 한국투자증권 python wrapper
 """
-import json
-import pickle
 import asyncio
+import datetime
+import json
+import os
+import pickle
+import zipfile
 from base64 import b64decode
 from multiprocessing import Process, Queue
-import datetime
-import requests
-import zipfile
-import os
+
 import pandas as pd
+import requests
 import websockets
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -139,7 +140,7 @@ orderbook_items = [
     '매수호가잔량08',
     '매수호가잔량09',
     '매수호가잔량10',
-    '총매도호가 잔량', # 43
+    '총매도호가 잔량',  # 43
     '총매수호가 잔량',
     '시간외 총매도호가 잔량',
     '시간외 총매수호가 증감',
@@ -168,6 +169,7 @@ notice_items = [
 class KoreaInvestmentWS(Process):
     """WebSocket
     """
+
     def __init__(self, api_key: str, api_secret: str, tr_id_list: list,
                  tr_key_list: list, user_id: str = None):
         """_summary_
@@ -238,7 +240,7 @@ class KoreaInvestmentWS(Process):
                 if data[0] == '0':
                     # 주식체결, 오더북
                     tokens = data.split('|')
-                    if tokens[1] == 'H0STCNT0':     # 주식 체결 데이터
+                    if tokens[1] == 'H0STCNT0':  # 주식 체결 데이터
                         self.parse_execution(tokens[2], tokens[3])
                     elif tokens[1] == 'H0STASP0':
                         self.parse_orderbook(tokens[3])
@@ -257,7 +259,7 @@ class KoreaInvestmentWS(Process):
                         elif rt_cd == '0':
                             if tr_id in ['H0STASP0', 'K0STCNI9', 'H0STCNI0', 'H0STCNI9']:
                                 self.aes_key = ctrl_data['body']['output']['key']
-                                self.aes_iv  = ctrl_data['body']['output']['iv']
+                                self.aes_iv = ctrl_data['body']['output']['iv']
 
                     elif tr_id == 'PINGPONG':
                         await websocket.send(data)
@@ -320,6 +322,7 @@ class KoreaInvestment:
     """
     한국투자증권 REST API
     """
+
     def __init__(self, api_key: str, api_secret: str, acc_no: str,
                  exchange: str = '서울', mock: bool = False):
         """생성자
@@ -402,8 +405,8 @@ class KoreaInvestment:
             status = False
 
             if ((now_epoch - expire_epoch > 0) or
-                (data['api_key'] != self.api_key) or
-                (data['api_secret'] != self.api_secret)):
+                    (data['api_key'] != self.api_key) or
+                    (data['api_secret'] != self.api_secret)):
                 status = False
             else:
                 status = True
@@ -428,10 +431,10 @@ class KoreaInvestment:
         path = 'uapi/hashkey'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json',
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'User-Agent': 'Mozilla/5.0'
+            'content-type': 'application/json',
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'User-Agent': 'Mozilla/5.0'
         }
         resp = requests.post(url, headers=headers, data=json.dumps(data))
         haskkey = resp.json()['HASH']
@@ -463,11 +466,11 @@ class KoreaInvestment:
         path = 'uapi/domestic-stock/v1/quotations/inquire-price'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'FHKST01010100'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'FHKST01010100'
         }
         params = {
             'fid_cond_mrkt_div_code': market_code,
@@ -488,11 +491,11 @@ class KoreaInvestment:
 
         # request header
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'HHDFS00000300'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'HHDFS00000300'
         }
 
         # query parameter
@@ -505,7 +508,7 @@ class KoreaInvestment:
         resp = requests.get(url, headers=headers, params=params)
         return resp.json()
 
-    def fetch_today_1m_ohlcv(self, symbol: str, to: str=''):
+    def fetch_today_1m_ohlcv(self, symbol: str, to: str = ''):
         """국내주식시세/주식당일분봉조회
 
         Args:
@@ -563,12 +566,12 @@ class KoreaInvestment:
         path = '/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json; charset=utf-8',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'FHKST03010200',
-           'tr_cont': '',
+            'content-type': 'application/json; charset=utf-8',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'FHKST03010200',
+            'tr_cont': '',
         }
 
         params = {
@@ -581,7 +584,7 @@ class KoreaInvestment:
         res = requests.get(url, headers=headers, params=params)
         return res.json()
 
-    def fetch_ohlcv(self, symbol: str, timeframe: str = 'D', since:str='',
+    def fetch_ohlcv(self, symbol: str, timeframe: str = 'D', since: str = '',
                     adj_price: bool = True) -> dict:
         """fetch OHLCV (day, week, month)
         Args:
@@ -609,11 +612,11 @@ class KoreaInvestment:
         path = 'uapi/domestic-stock/v1/quotations/inquire-daily-price'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'FHKST01010400'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'FHKST01010400'
         }
 
         adj_param = '1' if adj_price else '0'
@@ -755,8 +758,8 @@ class KoreaInvestment:
             _type_: _description_
         """
         file_name = base_dir + '/kosdaq_code.mst'
-        tmp_fil1 = base_dir +  '/kosdaq_code_part1.tmp'
-        tmp_fil2 = base_dir +  '/kosdaq_code_part2.tmp'
+        tmp_fil1 = base_dir + '/kosdaq_code_part1.tmp'
+        tmp_fil2 = base_dir + '/kosdaq_code_part2.tmp'
 
         wf1 = open(tmp_fil1, mode='w', encoding='cp949')
         wf2 = open(tmp_fil2, mode='w')
@@ -778,34 +781,34 @@ class KoreaInvestment:
         df1 = pd.read_csv(tmp_fil1, header=None, encoding='cp949', names=part1_columns)
 
         field_specs = [
-            2, 1, 4, 4, 4,      # line 20
-            1, 1, 1, 1, 1,      # line 27
-            1, 1, 1, 1, 1,      # line 32
-            1, 1, 1, 1, 1,      # line 38
-            1, 1, 1, 1, 1,      # line 43
-            1, 9, 5, 5, 1,      # line 48
-            1, 1, 2, 1, 1,      # line 54
-            1, 2, 2, 2, 3,      # line 64
-            1, 3, 12, 12, 8,    # line 69
-            15, 21, 2, 7, 1,    # line 75
-            1, 1, 1, 9, 9,      # line 80
-            9, 5, 9, 8, 9,      # line 85
+            2, 1, 4, 4, 4,  # line 20
+            1, 1, 1, 1, 1,  # line 27
+            1, 1, 1, 1, 1,  # line 32
+            1, 1, 1, 1, 1,  # line 38
+            1, 1, 1, 1, 1,  # line 43
+            1, 9, 5, 5, 1,  # line 48
+            1, 1, 2, 1, 1,  # line 54
+            1, 2, 2, 2, 3,  # line 64
+            1, 3, 12, 12, 8,  # line 69
+            15, 21, 2, 7, 1,  # line 75
+            1, 1, 1, 9, 9,  # line 80
+            9, 5, 9, 8, 9,  # line 85
             3, 1, 1, 1
         ]
 
         part2_columns = [
-            '그룹코드', '시가총액규모', '지수업종대분류', '지수업종중분류', '지수업종소분류', # line 20
+            '그룹코드', '시가총액규모', '지수업종대분류', '지수업종중분류', '지수업종소분류',  # line 20
             '벤처기업', '저유동성', 'KRX', 'ETP', 'KRX100',  # line 27
-            'KRX자동차', 'KRX반도체', 'KRX바이오', 'KRX은행', 'SPAC',   # line 32
-            'KRX에너지화학', 'KRX철강', '단기과열', 'KRX미디어통신', 'KRX건설', # line 38
-            '투자주의', 'KRX증권', 'KRX선박', 'KRX섹터_보험', 'KRX섹터_운송',   # line 43
-            'KOSDAQ150', '기준가', '매매수량단위', '시간외수량단위', '거래정지',    # line 48
-            '정리매매', '관리종목', '시장경고', '경고예고', '불성실공시',   # line 54
-            '우회상장', '락구분', '액면변경', '증자구분', '증거금비율',     # line 64
-            '신용가능', '신용기간', '전일거래량', '액면가', '상장일자',     # line 69
-            '상장주수', '자본금', '결산월', '공모가', '우선주',     # line 75
-            '공매도과열', '이상급등', 'KRX300', '매출액', '영업이익',   # line 80
-            '경상이익', '당기순이익', 'ROE', '기준년월', '시가총액',    # line 85
+            'KRX자동차', 'KRX반도체', 'KRX바이오', 'KRX은행', 'SPAC',  # line 32
+            'KRX에너지화학', 'KRX철강', '단기과열', 'KRX미디어통신', 'KRX건설',  # line 38
+            '투자주의', 'KRX증권', 'KRX선박', 'KRX섹터_보험', 'KRX섹터_운송',  # line 43
+            'KOSDAQ150', '기준가', '매매수량단위', '시간외수량단위', '거래정지',  # line 48
+            '정리매매', '관리종목', '시장경고', '경고예고', '불성실공시',  # line 54
+            '우회상장', '락구분', '액면변경', '증자구분', '증거금비율',  # line 64
+            '신용가능', '신용기간', '전일거래량', '액면가', '상장일자',  # line 69
+            '상장주수', '자본금', '결산월', '공모가', '우선주',  # line 75
+            '공매도과열', '이상급등', 'KRX300', '매출액', '영업이익',  # line 80
+            '경상이익', '당기순이익', 'ROE', '기준년월', '시가총액',  # line 85
             '그룹사코드', '회사신용한도초과', '담보대출가능', '대주가능'
         ]
 
@@ -856,11 +859,11 @@ class KoreaInvestment:
         path = '/uapi/domestic-stock/v1/trading/inquire-psbl-order'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'VTTC8908R' if self.mock else 'TTTC8908R'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'VTTC8908R' if self.mock else 'TTTC8908R'
         }
         params = {
             'CANO': self.acc_no_prefix,
@@ -930,11 +933,11 @@ class KoreaInvestment:
         path = 'uapi/domestic-stock/v1/trading/inquire-balance'
         url = f'{self.base_url}/{path}'
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'VTTC8434R' if self.mock else 'TTTC8434R'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'VTTC8434R' if self.mock else 'TTTC8434R'
         }
         params = {
             'CANO': self.acc_no_prefix,
@@ -955,7 +958,7 @@ class KoreaInvestment:
         data['tr_cont'] = res.headers['tr_cont']
         return data
 
-    def fetch_present_balance(self, foreign_currency: bool=True) -> dict:
+    def fetch_present_balance(self, foreign_currency: bool = True) -> dict:
         """해외주식주문/해외주식 체결기준현재잔고
         Args:
             foreign_currency (bool): True: 외화, False: 원화
@@ -967,11 +970,11 @@ class KoreaInvestment:
 
         # request header
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'VTRP6504R' if self.mock else 'CTRP6504R'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'VTRP6504R' if self.mock else 'CTRP6504R'
         }
 
         # query parameter
@@ -1035,7 +1038,6 @@ class KoreaInvestment:
         path = '/uapi/overseas-stock/v1/trading/inquire-balance'
         url = f'{self.base_url}/{path}'
 
-
         # 주야간원장 구분 호출
         resp = self.fetch_oversea_day_night()
         psbl = resp['output']['PSBL_YN']
@@ -1047,11 +1049,11 @@ class KoreaInvestment:
 
         # request header
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': tr_id
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': tr_id
         }
 
         # query parameter
@@ -1080,11 +1082,11 @@ class KoreaInvestment:
 
         # request/header
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'JTTT3010R'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'JTTT3010R'
         }
 
         res = requests.get(url, headers=headers)
@@ -1124,13 +1126,13 @@ class KoreaInvestment:
         }
         hashkey = self.issue_hashkey(data)
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': tr_id,
-           'custtype': 'P',
-           'hashkey': hashkey
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': tr_id,
+            'custtype': 'P',
+            'hashkey': hashkey
         }
         resp = requests.post(url, headers=headers, data=json.dumps(data))
         return resp.json()
@@ -1203,7 +1205,7 @@ class KoreaInvestment:
         return resp
 
     def cancel_order(self, org_no: str, order_no: str, quantity: int, total: bool,
-                     order_type: str='00', price: int=100):
+                     order_type: str = '00', price: int = 100):
         """주문 취소
 
         Args:
@@ -1271,12 +1273,12 @@ class KoreaInvestment:
         }
         hashkey = self.issue_hashkey(data)
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'VTTC0803U' if self.mock else 'TTTC0803U',
-           'hashkey': hashkey
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'VTTC0803U' if self.mock else 'TTTC0803U',
+            'hashkey': hashkey
         }
         resp = requests.post(url, headers=headers, data=json.dumps(data))
         return resp.json()
@@ -1297,11 +1299,11 @@ class KoreaInvestment:
         type2 = param['INQR_DVSN_2']
 
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'TTTC8036R'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'TTTC8036R'
         }
 
         params = {
@@ -1397,18 +1399,18 @@ class KoreaInvestment:
         }
         hashkey = self.issue_hashkey(data)
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': tr_id,
-           'hashkey': hashkey
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': tr_id,
+            'hashkey': hashkey
         }
         resp = requests.post(url, headers=headers, data=json.dumps(data))
         return resp.json()
 
-    def fetch_ohlcv_domestic(self, symbol: str, timeframe:str='D',
-                             since:str='', adj_price:bool=True):
+    def fetch_ohlcv_domestic(self, symbol: str, timeframe: str = 'D',
+                             since: str = '', adj_price: bool = True):
         """국내주식시세/국내주식 기간별 시세(일/주/월/년)
 
         Args:
@@ -1421,11 +1423,11 @@ class KoreaInvestment:
         url = f'{self.base_url}/{path}'
 
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'FHKST03010100'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'FHKST03010100'
         }
 
         if since == '':
@@ -1447,8 +1449,8 @@ class KoreaInvestment:
         resp = requests.get(url, headers=headers, params=params)
         return resp.json()
 
-    def fetch_ohlcv_overesea(self, symbol: str, timeframe:str='D',
-                             since:str='', adj_price:bool=True):
+    def fetch_ohlcv_overesea(self, symbol: str, timeframe: str = 'D',
+                             since: str = '', adj_price: bool = True):
         """해외주식현재가/해외주식 기간별시세
 
         Args:
@@ -1461,11 +1463,11 @@ class KoreaInvestment:
         url = f'{self.base_url}/{path}'
 
         headers = {
-           'content-type': 'application/json',
-           'authorization': self.access_token,
-           'appKey': self.api_key,
-           'appSecret': self.api_secret,
-           'tr_id': 'HHDFS76240000'
+            'content-type': 'application/json',
+            'authorization': self.access_token,
+            'appKey': self.api_key,
+            'appSecret': self.api_secret,
+            'tr_id': 'HHDFS76240000'
         }
 
         timeframe_lookup = {
@@ -1491,9 +1493,8 @@ class KoreaInvestment:
         resp = requests.get(url, headers=headers, params=params)
         return resp.json()
 
-if __name__ == '__main__':
-    import pprint
 
+if __name__ == '__main__':
     with open('../koreainvestment.key', encoding='utf-8') as key_file:
         lines = key_file.readlines()
 
@@ -1511,19 +1512,19 @@ if __name__ == '__main__':
     balance = broker.fetch_present_balance()
     print(balance)
 
-    #result = broker.fetch_oversea_day_night()
-    #pprint.pprint(result)
+    # result = broker.fetch_oversea_day_night()
+    # pprint.pprint(result)
 
-    #minute1_ohlcv = broker.fetch_today_1m_ohlcv('005930')
-    #pprint.pprint(minute1_ohlcv)
+    # minute1_ohlcv = broker.fetch_today_1m_ohlcv('005930')
+    # pprint.pprint(minute1_ohlcv)
 
-    #broker = KoreaInvestment(key, secret, exchange='나스닥')
-    #import pprint
-    #resp = broker.fetch_price('005930')
-    #pprint.pprint(resp)
+    # broker = KoreaInvestment(key, secret, exchange='나스닥')
+    # import pprint
+    # resp = broker.fetch_price('005930')
+    # pprint.pprint(resp)
     #
-    #b = broker.fetch_balance('63398082')
-    #pprint.pprint(b)
+    # b = broker.fetch_balance('63398082')
+    # pprint.pprint(b)
     #
     # resp = broker.create_market_buy_order('63398082', '005930', 10)
     # pprint.pprint(resp)
@@ -1535,10 +1536,10 @@ if __name__ == '__main__':
     # print(resp)
 
     # 실시간주식 체결가
-    #broker_ws = KoreaInvestmentWS(
+    # broker_ws = KoreaInvestmentWS(
     #   key, secret, ['H0STCNT0', 'H0STASP0'], ['005930', '000660'], user_id='idjhh82')
-    #broker_ws.start()
-    #while True:
+    # broker_ws.start()
+    # while True:
     #    data_ = broker_ws.get()
     #    if data_[0] == '체결':
     #        print(data_[1])
@@ -1561,9 +1562,9 @@ if __name__ == '__main__':
     #    data = broker_ws.get()
     #    print(data)
 
-    #import pprint
-    #broker = KoreaInvestment(key, secret, exchange='나스닥')
-    #resp_ohlcv = broker.fetch_ohlcv('TSLA', '1d', to='')
-    #print(len(resp_ohlcv['output2']))
-    #pprint.pprint(resp_ohlcv['output2'][0])
-    #pprint.pprint(resp_ohlcv['output2'][-1])
+    # import pprint
+    # broker = KoreaInvestment(key, secret, exchange='나스닥')
+    # resp_ohlcv = broker.fetch_ohlcv('TSLA', '1d', to='')
+    # print(len(resp_ohlcv['output2']))
+    # pprint.pprint(resp_ohlcv['output2'][0])
+    # pprint.pprint(resp_ohlcv['output2'][-1])
